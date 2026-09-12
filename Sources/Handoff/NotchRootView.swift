@@ -2,7 +2,7 @@ import SwiftUI
 
 private enum NotchRootDebug {
   /// Master toggle for all notch border overlays.
-  static let showBorders = true
+  static let showBorders = false
   /// Debug-only overlay for visualizing the app notch cutout path.
   static let showAppCutoutBorder = showBorders
   /// Debug-only overlay for visualizing the physical Mac notch footprint.
