@@ -76,7 +76,7 @@ final class HTTPRequestContext {
 /// confinement is the actual safety mechanism, the compiler just can't see
 /// it through GCD's API.
 final class LoopbackHTTPServer: @unchecked Sendable {
-  private let queue = DispatchQueue(label: "com.notched.hookserver.io")
+  private let queue = DispatchQueue(label: "com.handoff.hookserver.io")
   private var listener: NWListener?
   private var activeConnections: [ObjectIdentifier: HTTPConnection] = [:]
 

@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-  name: "Notched",
+  name: "Handoff",
   platforms: [.macOS(.v13)],
   targets: [
     .executableTarget(
-      name: "Notched",
-      path: "Sources/Notched"
+      name: "Handoff",
+      path: "Sources/Handoff"
     )
   ]
 )

@@ -62,18 +62,18 @@ final class HotKey {
       &handlerRef
     )
     guard installStatus == noErr else {
-      NSLog("Notched: could not install the hotkey handler (status \(installStatus))")
+      NSLog("Handoff: could not install the hotkey handler (status \(installStatus))")
       return nil
     }
 
-    let hotKeyID = EventHotKeyID(signature: OSType(0x4E_4F_54_43), id: id)  // 'NOTC'
+    let hotKeyID = EventHotKeyID(signature: OSType(0x48_41_4E_44), id: id)  // 'HAND'
     let registerStatus = RegisterEventHotKey(
       keyCode, modifiers, hotKeyID, GetApplicationEventTarget(), 0, &hotKeyRef
     )
     guard registerStatus == noErr, hotKeyRef != nil else {
       // Almost always means another app already owns this chord. Logged so a
       // collision is diagnosable rather than just a dead key.
-      NSLog("Notched: could not register the hotkey (status \(registerStatus)) — already taken?")
+      NSLog("Handoff: could not register the hotkey (status \(registerStatus)) — already taken?")
       if let handlerRef { RemoveEventHandler(handlerRef) }
       return nil
     }

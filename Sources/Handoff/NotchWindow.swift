@@ -128,12 +128,12 @@ final class NotchWindow: NSPanel {
   }
 
   /// LSUIElement + .nonactivatingPanel means the panel can be key inside
-  /// Notched while macOS still routes keyDown to the frontmost app, and
+  /// Handoff while macOS still routes keyDown to the frontmost app, and
   /// clicking a non-activating panel never activates us. Real activation is
   /// the only way a text field here ever sees a keystroke.
   func takeFocus() {
     // Capture only on the way in. Re-capturing while we already hold focus
-    // would record Notched itself, and the restore would hand activation
+    // would record Handoff itself, and the restore would hand activation
     // back to us — stranding it with nothing coming forward.
     if previousApp == nil {
       let frontmost = NSWorkspace.shared.frontmostApplication

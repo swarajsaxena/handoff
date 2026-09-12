@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Design tokens for the AgentNotch dashboard. Keeps colors, fonts and spacing
+/// Design tokens for the Handoff dashboard. Keeps colors, fonts and spacing
 /// in one place so views never hardcode raw values.
 enum Theme {
   // Surfaces

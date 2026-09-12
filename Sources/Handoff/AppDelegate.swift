@@ -19,7 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // Leaves the hooks themselves installed (nothing to reinstall next
     // launch) but removes the pidfile the bridge script checks, so
     // every hook fails fast instead of adding connect latency to
-    // Claude Code while Notched is closed.
+    // Claude Code while Handoff is closed.
     HookInstaller.removePidFile()
     hookServer?.stop()
     // Quitting while we hold focus would leave the user with no frontmost app.
@@ -34,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let (port, token) = try await server.start()
         try HookInstaller.install(port: port, token: token)
       } catch {
-        NSLog("Notched: failed to start the Claude Code hook bridge: \(error)")
+        NSLog("Handoff: failed to start the Claude Code hook bridge: \(error)")
       }
     }
   }
@@ -45,7 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     if let button = item.button {
       button.image = NSImage(
         systemSymbolName: "rectangle.topthird.inset.filled",
-        accessibilityDescription: "Notched"
+        accessibilityDescription: "Handoff"
       )
       button.image?.isTemplate = true
     }
@@ -62,7 +62,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     menu.addItem(.separator())
     menu.addItem(
-      withTitle: "Quit Notched",
+      withTitle: "Quit Handoff",
       action: #selector(NSApplication.terminate(_:)),
       keyEquivalent: "q"
     )
@@ -74,7 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     do {
       try HookInstaller.uninstall()
     } catch {
-      NSLog("Notched: failed to remove Claude Code hooks: \(error)")
+      NSLog("Handoff: failed to remove Claude Code hooks: \(error)")
     }
   }
 }

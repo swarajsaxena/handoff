@@ -5,13 +5,13 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleExecutable</key>
-    <string>Notched</string>
+    <string>Handoff</string>
     <key>CFBundleIdentifier</key>
-    <string>com.swarajsaxena.notched</string>
+    <string>com.swarajsaxena.handoff</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>Notched</string>
+    <string>Handoff</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -21,6 +21,6 @@
     <key>LSUIElement</key>
     <true/>
     <key>NSAppleEventsUsageDescription</key>
-    <string>Notched needs automation access to control Terminal so it can resume Claude Code sessions for you.</string>
+    <string>Handoff needs automation access to control Terminal so it can resume Claude Code sessions for you.</string>
 </dict>
 </plist>

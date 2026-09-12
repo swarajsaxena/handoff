@@ -3,7 +3,7 @@ import Foundation
 /// The Claude Code hook events we install and understand. `hook_event_name`
 /// in every payload matches one of these. The terminal name (which has no
 /// field of its own in any payload) rides along separately as an
-/// `X-Notched-Terminal` HTTP header the bridge script adds to every
+/// `X-Handoff-Terminal` HTTP header the bridge script adds to every
 /// request — see `HookServer` and docs/claude-code-integration-notes.md §3.
 enum HookEventName: String, Decodable {
   case sessionStart = "SessionStart"

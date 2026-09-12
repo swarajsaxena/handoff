@@ -18,7 +18,7 @@ enum ResumeLauncher {
 
   static func launch(session: PastSession) {
     guard FileManager.default.fileExists(atPath: session.cwd) else {
-      NSLog("[Notched] Resume skipped — cwd no longer exists: \(session.cwd)")
+      NSLog("[Handoff] Resume skipped — cwd no longer exists: \(session.cwd)")
       return
     }
 
@@ -44,7 +44,7 @@ enum ResumeLauncher {
     var error: NSDictionary?
     NSAppleScript(source: script)?.executeAndReturnError(&error)
     guard let error else { return }
-    NSLog("[Notched] AppleScript error: \(error)")
+    NSLog("[Handoff] AppleScript error: \(error)")
     if isAppleEventsPermissionDenied(error) {
       presentAutomationPermissionAlert()
     }
@@ -60,7 +60,7 @@ enum ResumeLauncher {
     NSAppleScript(source: script)?.executeAndReturnError(&error)
     guard let error else { return true }
 
-    NSLog("[Notched] AppleScript auth check error: \(error)")
+    NSLog("[Handoff] AppleScript auth check error: \(error)")
     if isAppleEventsPermissionDenied(error) {
       presentAutomationPermissionAlert()
       return false
@@ -78,7 +78,7 @@ enum ResumeLauncher {
     alert.alertStyle = .warning
     alert.messageText = "Allow Terminal Automation"
     alert.informativeText =
-      "Notched needs permission to control Terminal to resume Claude Code sessions. Enable it in System Settings > Privacy & Security > Automation."
+      "Handoff needs permission to control Terminal to resume Claude Code sessions. Enable it in System Settings > Privacy & Security > Automation."
     alert.addButton(withTitle: "Open Settings")
     alert.addButton(withTitle: "Not now")
 
@@ -110,7 +110,7 @@ enum ResumeLauncher {
     do {
       try proc.run()
     } catch {
-      NSLog("[Notched] Template launch error: \(error)")
+      NSLog("[Handoff] Template launch error: \(error)")
     }
   }
 }

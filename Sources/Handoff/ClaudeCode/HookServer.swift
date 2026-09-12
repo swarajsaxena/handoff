@@ -10,7 +10,7 @@ import Security
 /// script rather than a declarative `type: "http"` hook.
 final class HookServer {
   private static let logger = Logger(
-    subsystem: "com.swarajsaxena.notched", category: "hooks")
+    subsystem: "com.swarajsaxena.handoff", category: "hooks")
 
   private let server = LoopbackHTTPServer()
   private let sessionStore: SessionStore
@@ -54,8 +54,8 @@ final class HookServer {
       return .status(400)
     }
 
-    let terminalHeader = request.header("X-Notched-Terminal")
-    let claudePID = request.header("X-Notched-PID").flatMap(Int32.init)
+    let terminalHeader = request.header("X-Handoff-Terminal")
+    let claudePID = request.header("X-Handoff-PID").flatMap(Int32.init)
     Self.logHook(envelope, terminal: terminalHeader, pid: claudePID)
 
     switch envelope.hookEventName {

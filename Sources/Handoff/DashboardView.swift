@@ -231,7 +231,7 @@ private struct DashboardHeader: View {
     VStack(alignment: .leading, spacing: 12) {
       HStack {
         HStack(spacing: 6) {
-          Text("AGENTNOTCH")
+          Text("HANDOFF")
             .font(Theme.Text.label)
             .foregroundStyle(Theme.textDim)
           Text("v1.4.0")

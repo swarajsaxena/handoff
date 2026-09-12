@@ -1,4 +1,4 @@
-# Notched
+# Handoff
 
 A minimal macOS notch-expansion prototype. Hover the notch, it grows and says
 **Hi Swaraj**. Move away, it collapses back into the cutout.

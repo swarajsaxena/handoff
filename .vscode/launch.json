@@ -5,20 +5,20 @@
       "request": "launch",
       "args": [],
       "cwd": "${workspaceFolder:notched}",
-      "name": "Debug Notched",
-      "target": "Notched",
+      "name": "Debug Handoff",
+      "target": "Handoff",
       "configuration": "debug",
-      "preLaunchTask": "swift: Build Debug Notched"
+      "preLaunchTask": "swift: Build Debug Handoff"
     },
     {
       "type": "swift",
       "request": "launch",
       "args": [],
       "cwd": "${workspaceFolder:notched}",
-      "name": "Release Notched",
-      "target": "Notched",
+      "name": "Release Handoff",
+      "target": "Handoff",
       "configuration": "release",
-      "preLaunchTask": "swift: Build Release Notched"
+      "preLaunchTask": "swift: Build Release Handoff"
     }
   ]
 }

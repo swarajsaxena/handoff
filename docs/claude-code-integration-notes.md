@@ -79,10 +79,10 @@ Output (confirmed, same for both `accept`/`decline`/`cancel`):
 The plan's architecture section says `"type": "http"` hooks pointed straight at the app's loopback server. I'm deviating from that, for three concrete reasons:
 
 1. **`SessionStart` doesn't support `http` hooks at all** — the reference is explicit: *"Only `type: "command"` and `type: "mcp_tool"` hooks are supported"* for that event. We need `SessionStart` (for the terminal-name capture the plan itself asks for), so at least one event *must* be command-type. Using command-type everywhere keeps one mechanism instead of two.
-2. **Ephemeral port problem.** The app binds a random port per launch (required — no fixed port to avoid clashing with other local software). A declarative `http` hook has a literal URL baked into `~/.claude/settings.json`; if the app restarts on a new port mid-session, every *already-running* Claude Code process still has the old port compiled into hooks it read at startup. A command hook that shells out to a tiny wrapper script can instead read the current port from a file **at call time**, so a Notched restart doesn't strand already-running sessions.
+2. **Ephemeral port problem.** The app binds a random port per launch (required — no fixed port to avoid clashing with other local software). A declarative `http` hook has a literal URL baked into `~/.claude/settings.json`; if the app restarts on a new port mid-session, every *already-running* Claude Code process still has the old port compiled into hooks it read at startup. A command hook that shells out to a tiny wrapper script can instead read the current port from a file **at call time**, so a Handoff restart doesn't strand already-running sessions.
 3. **Token custody.** `~/.claude/settings.json` isn't a locked-down file. A command-type wrapper script reads the bearer token from a dedicated `0600` file at call time instead of the token sitting in cleartext inside a `644` settings file that may get synced/backed up/viewed.
 
-Net effect: `HookInstaller` writes one small generated shell script (`~/Library/Application Support/Notched/hook-bridge.sh`) plus a `0600` JSON file (`hook-bridge.json`: `{"port": N, "token": "..."}`) plus a pidfile, and registers `"type": "command"` entries in `~/.claude/settings.json` that all invoke that one script with the event name as `$1`. Wire transport underneath is still plain HTTP over loopback (`curl` inside the script) — this only changes how Claude Code invokes the bridge, not the server we're building.
+Net effect: `HookInstaller` writes one small generated shell script (`~/Library/Application Support/Handoff/hook-bridge.sh`) plus a `0600` JSON file (`hook-bridge.json`: `{"port": N, "token": "..."}`) plus a pidfile, and registers `"type": "command"` entries in `~/.claude/settings.json` that all invoke that one script with the event name as `$1`. Wire transport underneath is still plain HTTP over loopback (`curl` inside the script) — this only changes how Claude Code invokes the bridge, not the server we're building.
 
 **Fast-fail is now explicit, not incidental.** The wrapper script:
 ```
@@ -105,7 +105,7 @@ Final list (revised again, see §9): `SessionStart, UserPromptSubmit, PreToolUse
 
 ## 5. File plan
 
-New, under `Sources/Notched/ClaudeCode/`:
+New, under `Sources/Handoff/ClaudeCode/`:
 
 | File | Responsibility |
 |---|---|
@@ -117,7 +117,7 @@ New, under `Sources/Notched/ClaudeCode/`:
 | `GitBranchReader.swift` | Reads `<cwd>/.git/HEAD` (+ resolves a ref line) for the branch name — no shell-out, per the plan. |
 | `SessionStore.swift` | `@MainActor final class: ObservableObject`. Ingests every event into `[AgentTask]` (keyed by `session_id`) + `[ActivityEntry]` + header stats. Owns the pending-continuation registry for `PermissionRequest`/`Elicitation` (see §6). Exposes `respond(sessionId:allow:)`, `answer(sessionId:content:)`, `dismissElicitation(sessionId:)`. |
 
-New, under `Sources/Notched/`:
+New, under `Sources/Handoff/`:
 
 | File | Responsibility |
 |---|---|

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Rebuild-and-relaunch loop for Notched.
+# Rebuild-and-relaunch loop for Handoff.
 #
 # Polls the Swift sources and, on change, builds *before* stopping the running
 # app — so a syntax error leaves the previous build on screen instead of
@@ -11,14 +11,14 @@ set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 # Absolute, so the stale-instance sweep below can't match another checkout.
-readonly BINARY="$PWD/.build/debug/Notched"
-readonly APP_BUNDLE="$PWD/.build/debug/Notched.app"
+readonly BINARY="$PWD/.build/debug/Handoff"
+readonly APP_BUNDLE="$PWD/.build/debug/Handoff.app"
 readonly APP_CONTENTS="$APP_BUNDLE/Contents"
 readonly APP_MACOS="$APP_CONTENTS/MacOS"
 readonly APP_RESOURCES="$APP_CONTENTS/Resources"
-readonly APP_PLIST_SOURCE="$PWD/Resources/Notched-Info.plist"
+readonly APP_PLIST_SOURCE="$PWD/Resources/Handoff-Info.plist"
 readonly APP_PLIST_DEST="$APP_CONTENTS/Info.plist"
-readonly APP_EXECUTABLE="$APP_MACOS/Notched"
+readonly APP_EXECUTABLE="$APP_MACOS/Handoff"
 readonly POLL_INTERVAL=0.3
 readonly DEBOUNCE=0.15
 

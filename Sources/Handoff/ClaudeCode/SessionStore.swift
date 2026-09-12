@@ -358,7 +358,7 @@ final class SessionStore: ObservableObject {
   func cancelQuestion(sessionId: String) {
     resolvePermission(
       sessionId: sessionId,
-      data: HookResponse.permissionDeny(message: "Question dismissed from Notched")
+      data: HookResponse.permissionDeny(message: "Question dismissed from Handoff")
     )
   }
 
@@ -366,7 +366,7 @@ final class SessionStore: ObservableObject {
     let data =
       allow
       ? HookResponse.permissionAllow()
-      : HookResponse.permissionDeny(message: "Denied from Notched")
+      : HookResponse.permissionDeny(message: "Denied from Handoff")
     resolvePermission(sessionId: sessionId, data: data)
   }
 
@@ -584,10 +584,10 @@ final class SessionStore: ObservableObject {
   }
 
   /// ponytail: a UserDefaults read, not a settings pane. Flip it with
-  /// `defaults write com.swarajsaxena.notched NotchedSoundEnabled -bool false`
+  /// `defaults write com.swarajsaxena.handoff HandoffSoundEnabled -bool false`
   /// until there's a preferences window to host it.
   private static var soundEnabled: Bool {
-    UserDefaults.standard.object(forKey: "NotchedSoundEnabled") as? Bool ?? true
+    UserDefaults.standard.object(forKey: "HandoffSoundEnabled") as? Bool ?? true
   }
 
   private static let needsYouSoundName = "Tink"  
