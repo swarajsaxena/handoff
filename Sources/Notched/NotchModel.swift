@@ -5,6 +5,11 @@ final class NotchModel: ObservableObject {
   @Published var indicator: CollapsedIndicator = .idle
   /// When true, hover-out must not collapse the panel (active questionnaire).
   @Published var isPinnedOpen = false
+  /// Opened deliberately by the hotkey. Separate from `isPinnedOpen` because
+  /// that one is written by the task subscription and would stomp this when a
+  /// question clears — and because hover-open and intent-open have different
+  /// dismissal rules.
+  @Published var isHotkeyOpen = false
 
   let metrics: NotchMetrics
 

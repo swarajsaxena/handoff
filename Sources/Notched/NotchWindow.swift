@@ -8,8 +8,9 @@ final class NotchWindow: NSPanel {
   private var expansionObservation: AnyCancellable?
   private var indicatorObservation: AnyCancellable?
   private var questionObservation: AnyCancellable?
-  /// True while this window should accept keyboard focus for a questionnaire.
-  private var questionActive = false
+  /// True while this window should accept keyboard focus: any pending
+  /// interaction, or the dashboard opened deliberately.
+  private var interactionActive = false
   /// Whoever was frontmost before a question stole activation, so typing
   /// can go back where it came from.
   private var previousApp: NSRunningApplication?
@@ -82,37 +83,94 @@ final class NotchWindow: NSPanel {
       }
 
     questionObservation = sessionStore.$tasks
-      .map { tasks in tasks.contains { $0.pendingQuestion != nil } }
+      .map { tasks in
+        PendingFocus(
+          // Any pending interaction may be driven by keyboard: permission
+          // approve/deny, an elicitation form, or a question.
+          anyInteraction: tasks.contains { $0.pendingInteraction != nil },
+          // Only the two that contain input controls pull activation over.
+          // A bare permission request must not yank focus off the user's
+          // terminal — that would fire on every Bash approval.
+          form: tasks.contains { $0.pendingQuestion != nil || $0.pendingElicitation != nil }
+        )
+      }
       .removeDuplicates()
-      .sink { [weak self] active in
+      .sink { [weak self] pending in
         guard let self else { return }
-        // Only the window on the main screen grabs key focus so
-        // multi-display setups don't fight over first responder.
-        let isPrimary = self.screen == NSScreen.main
-        self.questionActive = active && isPrimary
-        self.model.isPinnedOpen = active
-        if active {
+        // Exactly one window answers. Decided from the pointer, not
+        // NSScreen.main — "main" means "screen with the key window", so it
+        // changes under us the moment we take focus.
+        let isTarget = self.screen == Self.targetScreen()
+        self.interactionActive = pending.anyInteraction && isTarget
+        // Only a form pins the panel open — it has to stay visible to be
+        // filled in. A bare permission request leaves the panel alone and
+        // just becomes focusable, so approvals don't pop it open all day.
+        self.model.isPinnedOpen = pending.form
+        if pending.form {
           self.model.isExpanded = true
-          if isPrimary {
-            // LSUIElement + .nonactivatingPanel means the panel can be key
-            // inside Notched while macOS still routes keyDown to the
-            // frontmost app. Without real activation the form's text fields
-            // and key monitor never see a keystroke. Activate first so the
-            // app is frontmost before the panel is made key.
-            self.previousApp = NSWorkspace.shared.frontmostApplication
-            NSApp.activate(ignoringOtherApps: true)
-            self.makeKeyAndOrderFront(nil)
-          }
-        } else {
-          if self.isKeyWindow {
-            self.resignKey()
-          }
-          self.previousApp?.activate(options: [])
-          self.previousApp = nil
+        }
+        if pending.form && isTarget {
+          self.takeFocus()
+        } else if !pending.form && !self.model.isHotkeyOpen {
+          // Don't hand focus back while the user is deliberately using the
+          // panel — this sink fires on every task change, not just form ones.
+          self.releaseFocus()
         }
       }
   }
 
-  override var canBecomeKey: Bool { questionActive }
+  /// The window that should answer. Every window evaluates this within one
+  /// run-loop turn against an unmoved pointer, so they agree on one winner.
+  /// ponytail: single-display Macs collapse to the only window either way.
+  private static func targetScreen() -> NSScreen? {
+    let mouse = NSEvent.mouseLocation
+    return NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main
+  }
+
+  /// LSUIElement + .nonactivatingPanel means the panel can be key inside
+  /// Notched while macOS still routes keyDown to the frontmost app, and
+  /// clicking a non-activating panel never activates us. Real activation is
+  /// the only way a text field here ever sees a keystroke.
+  func takeFocus() {
+    // Capture only on the way in. Re-capturing while we already hold focus
+    // would record Notched itself, and the restore would hand activation
+    // back to us — stranding it with nothing coming forward.
+    if previousApp == nil {
+      let frontmost = NSWorkspace.shared.frontmostApplication
+      if frontmost != NSRunningApplication.current {
+        previousApp = frontmost
+      }
+    }
+    NSApp.activate(ignoringOtherApps: true)
+    makeKeyAndOrderFront(nil)
+  }
+
+  /// Idempotent: nils out, so a double dismiss can't reactivate twice.
+  func releaseFocus() {
+    if isKeyWindow {
+      resignKey()
+    }
+    previousApp?.activate(options: [])
+    previousApp = nil
+  }
+
+  override var canBecomeKey: Bool { interactionActive || model.isHotkeyOpen }
   override var canBecomeMain: Bool { false }
+
+  /// Esc on a deliberately-opened dashboard. A pending form owns its own Esc
+  /// (cancel/confirm), so this only fires when nothing is being answered.
+  override func cancelOperation(_ sender: Any?) {
+    guard model.isHotkeyOpen, !model.isPinnedOpen else { return }
+    model.isHotkeyOpen = false
+    model.isExpanded = false
+    releaseFocus()
+  }
+}
+
+/// What the task list currently wants from this window.
+private struct PendingFocus: Equatable {
+  /// Anything awaiting the user — enough to allow keyboard focus.
+  let anyInteraction: Bool
+  /// Specifically something with input controls — enough to take focus.
+  let form: Bool
 }

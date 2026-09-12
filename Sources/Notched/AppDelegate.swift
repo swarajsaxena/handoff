@@ -22,6 +22,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // Claude Code while Notched is closed.
     HookInstaller.removePidFile()
     hookServer?.stop()
+    // Quitting while we hold focus would leave the user with no frontmost app.
+    controller?.releaseFocus()
   }
 
   private func startClaudeCodeBridge() {
