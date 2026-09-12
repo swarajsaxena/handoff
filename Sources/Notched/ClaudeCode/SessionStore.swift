@@ -1,3 +1,4 @@
+import AppKit
 import Darwin
 import Foundation
 
@@ -24,6 +25,10 @@ final class SessionStore: ObservableObject {
   private var order: [String] = []
   private var tasksById: [String: AgentTask] = [:]
   private var isLoadingRecents = false
+
+  /// Sessions we've already chimed for, so republishing `tasks` — which
+  /// happens on every hook event — can't re-ring the same request.
+  private var chimedSessions: Set<String> = []
 
   private var permissionContinuations: [String: CheckedContinuation<Data, Never>] = [:]
   private var elicitationContinuations: [String: CheckedContinuation<Data, Never>] = [:]
@@ -563,7 +568,29 @@ final class SessionStore: ObservableObject {
 
   private func rebuildTasksArray() {
     tasks = order.compactMap { tasksById[$0] }.sorted { rank($0) < rank($1) }
+    announceNeedsYou()
   }
+
+  /// The only non-visual signal that the agent is blocked on you. Without it
+  /// the sole cue is a glyph in a 32pt strip at the top of one screen, which
+  /// you miss entirely if you're looking anywhere else.
+  private func announceNeedsYou() {
+    let waiting = Set(tasks.filter { $0.status == .needsYou }.map(\.id))
+    // Ring for arrivals only, and once per batch however many arrive at once.
+    let arrived = waiting.subtracting(chimedSessions)
+    chimedSessions = waiting
+    guard !arrived.isEmpty, Self.soundEnabled else { return }
+    NSSound(named: Self.needsYouSoundName)?.play()
+  }
+
+  /// ponytail: a UserDefaults read, not a settings pane. Flip it with
+  /// `defaults write com.swarajsaxena.notched NotchedSoundEnabled -bool false`
+  /// until there's a preferences window to host it.
+  private static var soundEnabled: Bool {
+    UserDefaults.standard.object(forKey: "NotchedSoundEnabled") as? Bool ?? true
+  }
+
+  private static let needsYouSoundName = "Tink"  
 
   private func rank(_ task: AgentTask) -> Int {
     switch task.status {
