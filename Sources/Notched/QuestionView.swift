@@ -32,12 +32,16 @@ struct QuestionView: View {
           store.declineElicitation(sessionId: sessionId, elicitationId: info.elicitationId)
         }
         .buttonStyle(NotchSecondaryButtonStyle())
+        .accessibilityLabel("Cancel this request")
+        .accessibilityAddTraits(.isButton)
 
         Button("Submit") {
           store.answerElicitation(
             sessionId: sessionId, elicitationId: info.elicitationId, content: buildContent())
         }
         .buttonStyle(NotchPrimaryButtonStyle())
+        .accessibilityLabel("Submit this form")
+        .accessibilityAddTraits(.isButton)
       }
     }
     .padding(10)

@@ -1,8 +1,17 @@
 import SwiftUI
 
+/// Which approval button the keyboard is on. Deny is always the default:
+/// approving runs a command, so Enter must never be the approving key.
+enum ApprovalAction {
+  case deny
+  case approve
+}
+
 struct TaskRowView: View {
   let task: AgentTask
   let now: Date
+  /// Non-nil only when this row is the one the keyboard is on.
+  var approvalFocus: ApprovalAction? = nil
   @EnvironmentObject private var store: SessionStore
 
   var body: some View {
@@ -26,10 +35,12 @@ struct TaskRowView: View {
               .foregroundStyle(task.isWarning ? Theme.warning : Theme.textSecondary)
           }
           if let command = task.command {
+            // No lineLimit: truncating this hides the tail of the very thing
+            // you're being asked to authorise.
             Text(command)
               .font(Theme.Text.body)
               .foregroundStyle(Theme.command)
-              .lineLimit(1)
+              .textSelection(.enabled)
           }
         }
 
@@ -37,6 +48,7 @@ struct TaskRowView: View {
 
         if task.needsApproval {
           ApprovalButtons(
+            focus: approvalFocus,
             onApprove: { store.respond(sessionId: task.id, allow: true) },
             onDeny: { store.respond(sessionId: task.id, allow: false) }
           )
@@ -75,38 +87,56 @@ private struct StatusDot: View {
 }
 
 private struct ApprovalButtons: View {
+  let focus: ApprovalAction?
   let onApprove: () -> Void
   let onDeny: () -> Void
 
+  /// .buttonStyle(.plain) suppresses AppKit's own focus ring, so the focused
+  /// control has to draw its own or keyboard users fly blind.
+  private func focusRing(_ action: ApprovalAction) -> some View {
+    RoundedRectangle(cornerRadius: 6)
+      .stroke(focus == action ? Theme.accent : Color.clear, lineWidth: 2)
+  }
+
   var body: some View {
-    HStack(spacing: 6) {
+    HStack(spacing: 10) {
       Button(action: onDeny) {
         Text("Deny")
           .font(Theme.mono(11, .medium))
-          .foregroundStyle(Theme.textSecondary)
-          .padding(.horizontal, 10)
-          .padding(.vertical, 5)
+          .foregroundStyle(Theme.textPrimary)
+          .padding(.horizontal, 12)
+          .padding(.vertical, 6)
           .background(
             RoundedRectangle(cornerRadius: 6)
-              .stroke(Theme.divider, lineWidth: 1)
+              .fill(Theme.surfaceRaised)
+          )
+          .overlay(
+            RoundedRectangle(cornerRadius: 6)
+              .stroke(Theme.textDim, lineWidth: 1)
           )
       }
       .buttonStyle(.plain)
+      .overlay(focusRing(.deny))
       .accessibilityLabel("Deny permission request")
       .accessibilityAddTraits(.isButton)
 
       Button(action: onApprove) {
         Text("Approve")
-          .font(Theme.mono(11, .semibold))
-          .foregroundStyle(.black)
-          .padding(.horizontal, 10)
-          .padding(.vertical, 5)
+          .font(Theme.mono(11, .medium))
+          .foregroundStyle(Theme.accent)
+          .padding(.horizontal, 12)
+          .padding(.vertical, 6)
           .background(
             RoundedRectangle(cornerRadius: 6)
-              .fill(Theme.textPrimary)
+              .fill(Theme.surfaceRaised)
+          )
+          .overlay(
+            RoundedRectangle(cornerRadius: 6)
+              .stroke(Theme.accent.opacity(0.5), lineWidth: 1)
           )
       }
       .buttonStyle(.plain)
+      .overlay(focusRing(.approve))
       .accessibilityLabel("Approve permission request")
       .accessibilityAddTraits(.isButton)
     }

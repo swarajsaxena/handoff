@@ -121,8 +121,10 @@ struct QuestionFlowView: View {
           .lineLimit(1)
       }
       .foregroundStyle(isActive ? Theme.accent : (completed ? Theme.statusDone : Theme.textDim))
-      .padding(.horizontal, 8)
-      .padding(.vertical, 4)
+      .padding(.horizontal, 10)
+      // Was the smallest target in the app. 44pt is a touch rule and doesn't
+      // transfer to a pointer-driven overlay, but ~28pt is a sane floor.
+      .padding(.vertical, 6)
       .background(
         RoundedRectangle(cornerRadius: 5)
           .fill(isActive ? Theme.accent.opacity(0.14) : Color.clear)
@@ -323,7 +325,9 @@ struct QuestionFlowView: View {
           submit()
         }
         .buttonStyle(NotchPrimaryButtonStyle())
-        .opacity(allAnswered ? 1 : 0.45)
+        // 0.45 on a near-black panel lands under 3:1; the control still has
+        // to be legible while it's unavailable.
+        .opacity(allAnswered ? 1 : 0.6)
         .disabled(!allAnswered)
         .accessibilityLabel("Submit answers")
       }
@@ -629,7 +633,7 @@ struct QuestionFlowView: View {
 /// Holds the local key-down monitor so the SwiftUI view struct isn't captured
 /// by AppKit for the life of the questionnaire. The view refreshes
 /// `onKeyDown` whenever relevant `@State` changes.
-private final class QuestionKeyMonitor: ObservableObject {
+final class QuestionKeyMonitor: ObservableObject {
   var onKeyDown: ((NSEvent) -> Bool)?
   private var monitor: Any?
 

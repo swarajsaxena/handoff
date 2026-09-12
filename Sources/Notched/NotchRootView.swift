@@ -37,6 +37,7 @@ private struct PhysicalMacNotchShape: Shape {
 struct NotchRootView: View {
   @ObservedObject var model: NotchModel
   @EnvironmentObject private var store: SessionStore
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   private var size: CGSize { model.currentSize }
   private var expandedTopRadius: CGFloat { 20 }
@@ -82,14 +83,16 @@ struct NotchRootView: View {
             if let active = store.activeQuestion {
               QuestionFlowView(sessionId: active.sessionId, info: active.info)
             } else {
-              DashboardView(isExpanded: model.isExpanded)
+              DashboardView(isExpanded: model.isExpanded, isInteractive: model.isHotkeyOpen)
             }
           }
           .frame(width: size.width, height: size.height, alignment: .top)
           .clipShape(notchShape)
           .opacity(model.isExpanded ? 1 : 0)
-          .blur(radius: model.isExpanded ? 0 : 8)
-          .scaleEffect(model.isExpanded ? 1 : 0.8)
+          // Reduce Motion keeps the cross-fade but drops the zoom and defocus,
+          // which are the parts that read as movement.
+          .blur(radius: reduceMotion ? 0 : (model.isExpanded ? 0 : 8))
+          .scaleEffect(reduceMotion ? 1 : (model.isExpanded ? 1 : 0.8))
           .allowsHitTesting(model.isExpanded)
         }
         .overlay {
@@ -100,10 +103,13 @@ struct NotchRootView: View {
         }
         .offset(x: model.horizontalOffset)
         .animation(
-          .timingCurve(0.22, 1, 0.36, 1, duration: 0.55),
+          reduceMotion ? .easeInOut(duration: 0.2) : .timingCurve(0.22, 1, 0.36, 1, duration: 0.55),
           value: model.isExpanded
         )
-        .animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.4), value: model.indicator)
+        .animation(
+          reduceMotion ? .easeInOut(duration: 0.2) : .timingCurve(0.22, 1, 0.36, 1, duration: 0.4),
+          value: model.indicator
+        )
 
       Spacer(minLength: 0)
     }

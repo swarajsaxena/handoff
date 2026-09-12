@@ -6,8 +6,21 @@ struct DashboardView: View {
   /// Forwarded from NotchRootView so we can re-fetch recents each time
   /// the panel expands (not just on first appear).
   var isExpanded: Bool = true
+  /// True only for the window that actually holds keyboard focus. This view is
+  /// built once per screen, so without this gate a two-display Mac installs two
+  /// key monitors and the unfocused copy acts on your keystrokes too.
+  var isInteractive: Bool = false
+
+  @State private var highlighted = 0
+  @State private var focusedAction: ApprovalAction = .deny
+  @StateObject private var keyMonitor = QuestionKeyMonitor()
 
   private let tick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+  /// Rows the keyboard can act on. Everything else is read-only.
+  private var approvals: [AgentTask] {
+    store.tasks.filter { $0.needsApproval }
+  }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
@@ -23,7 +36,11 @@ struct DashboardView: View {
           if !store.tasks.isEmpty {
             VStack(spacing: 0) {
               ForEach(Array(store.tasks.enumerated()), id: \.element.id) { index, task in
-                TaskRowView(task: task, now: now)
+                TaskRowView(
+                  task: task,
+                  now: now,
+                  approvalFocus: approvalFocus(for: task)
+                )
                 if index < store.tasks.count - 1 {
                   Rectangle().fill(Theme.divider).frame(height: 1)
                 }
@@ -40,7 +57,6 @@ struct DashboardView: View {
         }
       }
 
-      ActivityFeedView(entries: store.activity)
     }
     .padding(Theme.panelPadding)
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -48,6 +64,67 @@ struct DashboardView: View {
     .task { store.refreshRecentSessions() }
     .onChange(of: isExpanded) { expanded in
       if expanded { store.refreshRecentSessions() }
+    }
+    // Answering a question reconstructs this view, and it can come back with
+    // isInteractive already true — onChange never fires for an initial value,
+    // so without onAppear the arrow keys come back dead.
+    .onAppear { armKeyMonitor(isInteractive) }
+    .onChange(of: isInteractive) { armKeyMonitor($0) }
+    .onChange(of: highlighted) { _ in
+      // Every row change re-arms the safe default.
+      focusedAction = .deny
+      keyMonitor.onKeyDown = { event in self.handleKey(event) }
+    }
+    .onChange(of: focusedAction) { _ in
+      keyMonitor.onKeyDown = { event in self.handleKey(event) }
+    }
+    .onDisappear { keyMonitor.stop() }
+  }
+
+  private func armKeyMonitor(_ interactive: Bool) {
+    guard interactive else {
+      keyMonitor.stop()
+      return
+    }
+    highlighted = 0
+    focusedAction = .deny
+    keyMonitor.onKeyDown = { event in self.handleKey(event) }
+    keyMonitor.start()
+  }
+
+  private func approvalFocus(for task: AgentTask) -> ApprovalAction? {
+    guard isInteractive,
+      let index = approvals.firstIndex(where: { $0.id == task.id }),
+      index == highlighted
+    else { return nil }
+    return focusedAction
+  }
+
+  private func handleKey(_ event: NSEvent) -> Bool {
+    let rows = approvals
+    guard !rows.isEmpty else { return false }
+    let index = min(max(highlighted, 0), rows.count - 1)
+
+    switch event.keyCode {
+    case 125:  // down
+      highlighted = min(index + 1, rows.count - 1)
+      return true
+    case 126:  // up
+      highlighted = max(index - 1, 0)
+      return true
+    case 123:  // left
+      focusedAction = .deny
+      return true
+    case 124:  // right
+      focusedAction = .approve
+      return true
+    case 36, 76:  // return / keypad enter
+      // Deny is the default focus, so Enter alone can never approve — you
+      // have to arrow onto Approve deliberately first.
+      store.respond(sessionId: rows[index].id, allow: focusedAction == .approve)
+      return true
+    default:
+      return false
     }
   }
 }
@@ -127,6 +204,8 @@ private struct PastSessionRowView: View {
         ResumeLauncher.launch(session: session)
       }
       .buttonStyle(NotchSecondaryButtonStyle())
+      .accessibilityLabel("Resume session \(session.title)")
+      .accessibilityAddTraits(.isButton)
     }
     .padding(.vertical, 7)
   }
@@ -212,42 +291,6 @@ private struct StatCell: View {
         .foregroundStyle(Theme.textSecondary)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
-  }
-}
-
-// MARK: - Activity feed
-
-private struct ActivityFeedView: View {
-  let entries: [ActivityEntry]
-
-  var body: some View {
-    VStack(alignment: .leading, spacing: 5) {
-      Text("ACTIVITY FEED")
-        .font(Theme.Text.label)
-        .foregroundStyle(Theme.textDim)
-        .padding(.bottom, 2)
-
-      if entries.isEmpty {
-        Text("Nothing yet")
-          .font(Theme.Text.meta)
-          .foregroundStyle(Theme.textDim)
-      } else {
-        ForEach(entries) { entry in
-          HStack(spacing: 8) {
-            Text(entry.time)
-              .font(Theme.Text.meta)
-              .foregroundStyle(Theme.textDim)
-            Text(entry.repo)
-              .font(Theme.mono(9, .medium))
-              .foregroundStyle(Theme.textSecondary)
-            Text(entry.message)
-              .font(Theme.Text.meta)
-              .foregroundStyle(Theme.textSecondary)
-            Spacer()
-          }
-        }
-      }
-    }.frame(maxWidth: .infinity)
   }
 }
 

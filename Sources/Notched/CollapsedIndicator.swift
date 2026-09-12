@@ -44,6 +44,7 @@ struct CollapsedIndicator: Equatable {
 
 struct CollapsedIndicatorView: View {
   let indicator: CollapsedIndicator
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var claudeSpinDegrees: Double = 0
   private let spinTick = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
@@ -54,11 +55,31 @@ struct CollapsedIndicatorView: View {
       rightEar
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-    .accessibilityHidden(true)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(spokenSummary)
     .onReceive(spinTick) { _ in
-      guard indicator.effectiveIsWorking else { return }
+      // 30° per 100ms is ~50rpm, parked in peripheral vision for the whole of
+      // every agent turn — squarely the kind of persistent motion Reduce Motion
+      // exists to stop. The mark stays visible, it just holds still.
+      // ponytail: the timer still ticks and does nothing; conditionally
+      // subscribing costs more view-identity trouble than a 10Hz no-op is worth.
+      guard !reduceMotion, indicator.effectiveIsWorking else { return }
       claudeSpinDegrees = (claudeSpinDegrees + 30).truncatingRemainder(dividingBy: 360)
     }
+    .onChange(of: reduceMotion) { reduced in
+      // Turning it on mid-spin shouldn't leave the mark frozen at an angle.
+      if reduced { claudeSpinDegrees = 0 }
+    }
+  }
+
+  private var spokenSummary: String {
+    let count = indicator.effectiveNeedsYouCount
+    if count > 0 {
+      return count == 1 ? "1 session needs you" : "\(count) sessions need you"
+    }
+    if indicator.effectiveIsWorking { return "Agent working" }
+    if indicator.hasAliveSession { return "Session idle" }
+    return "No active sessions"
   }
 
   private var leftEar: some View {

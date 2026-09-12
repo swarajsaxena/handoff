@@ -30,9 +30,15 @@ enum Theme {
     .system(size: size, weight: weight, design: .monospaced)
   }
 
-  /// Semantic type scale. Five perceptible steps (9/11/13/15/26) mapped to
-  /// priority tiers, so size + weight reinforce hierarchy. Reference as
-  /// `Theme.Text.title` (qualified to avoid clashing with SwiftUI's `Text`).
+  /// Semantic type scale mapped to priority tiers, so size + weight reinforce
+  /// hierarchy. Reference as `Theme.Text.title` (qualified to avoid clashing
+  /// with SwiftUI's `Text`).
+  ///
+  /// The 8pt floor is deliberate and was re-confirmed against the real panel:
+  /// an 11pt floor was tried and read as too heavy at this density. Noted as
+  /// the one open accessibility item — 8pt is small for shipping, and the fix
+  /// if it ever matters is scaling with the system text-size setting rather
+  /// than a bigger constant.
   enum Text {
     static let hero = mono(24, .bold)  // the one NEEDS YOU number
     static let stat = mono(12, .semibold)  // KPI values
